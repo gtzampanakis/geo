@@ -1,6 +1,16 @@
 from math import *
 
+# Using meters for all distances.
+
 MID_R = 6371 * 1000.
+
+FEET_PER_METER = 3.28084
+
+def m_to_ft(m):
+    return m * FEET_PER_METER
+
+def ft_to_m(ft):
+    return ft / FEET_PER_METER
 
 def rad_to_deg(r):
     return 180. * r/pi
@@ -13,13 +23,19 @@ def gc_dist_rad(p1, l1, p2, l2, r=None):
         r = MID_R
     dp = abs(p1 - p2)
     dl = abs(l1 - l2)
+
+    cosp1 = cos(p1)
+    cosp2 = cos(p2)
+    sindl = sin(dl)
+    cosdl = cos(dl)
+    sinp1 = sin(p1)
+    sinp2 = sin(p2)
+
     nominator = (
-          (cos(p2) * sin(dl))**2
-        + (cos(p1) * sin(p2) - sin(p1) * cos(p2) * cos(dl))**2
+          (cosp2 * sindl)**2
+        + (cosp1 * sinp2 - sinp1 * cosp2 * cosdl)**2
     )
-    denominator = (
-        sin(p1) * sin(p2) + cos(p1) * cos(p2) * cos(dl)
-    )
+    denominator = sinp1 * sinp2 + cosp1 * cosp2 * cosdl
     return r * atan2(nominator**.5, denominator)
 
 def gc_dist_deg(p1, l1, p2, l2, r=None):

@@ -48,3 +48,10 @@ def join_on_k_closest(
         for item in items:
             yield (c1, item[1])
 
+def join_dict_files(path1, path2, threshold=None, k_closest=None):
+    assert threshold is None or k_closest is None
+    assert threshold is not None or k_closest is not None
+
+    if threshold is not None:
+        pass
+
