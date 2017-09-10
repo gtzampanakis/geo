@@ -1,6 +1,8 @@
+from collections import OrderedDict
 import glob
 import os
 import unittest
+import StringIO
 
 import fileio as fio
 import error
@@ -75,3 +77,24 @@ class FileReaderTestCase(unittest.TestCase):
         self.assertEqual(assert_obj.exception.line_number, 1)
         self.assertEqual(assert_obj.exception.col, 'Longitude')
         self.assertEqual(assert_obj.exception.value, '-a95.60179108')
+
+    def test_get_csv_writer_to_fobj(self):
+        sio = StringIO.StringIO()
+        dicts = [
+            OrderedDict([('col3', 'a1'), ('col2', 'b1'), ('col1', 'c1')]),
+            OrderedDict([('col3', 'a2'), ('col2', 'b2'), ('col1', 'c2')]),
+            OrderedDict([('col3', 'a3'), ('col2', 'b3'), ('col1', 'c3')]),
+            OrderedDict([('col3', 'a4'), ('col2', 'b4'), ('col1', 'c4')]),
+            OrderedDict([('col3', 'a5'), ('col2', 'b5'), ('col1', 'c5')]),
+        ]
+        fio.get_csv_writer_to_fobj(sio, dicts)
+        self.assertEqual(
+            sio.getvalue(),
+			'col3,col2,col1\r\n'
+			'a1,b1,c1\r\n'
+			'a2,b2,c2\r\n'
+			'a3,b3,c3\r\n'
+			'a4,b4,c4\r\n'
+			'a5,b5,c5\r\n'
+		)
+

@@ -1,3 +1,4 @@
+import collections
 import heapq
 
 import geotypes as gt
@@ -52,8 +53,11 @@ def join_on_k_closest(
 
 def path_to_coords_iterator(path):
     for row in fio.get_csv_reader(path):
-        coords = row['__coords']
-        coords.data = row
+        coords = gt.Coords(
+            float(row['Latitude']),
+            float(row['Longitude']),
+            data=row
+        )
         yield coords
 
 def join_files(path1, path2, threshold=None, k_closest=None):
@@ -74,19 +78,16 @@ def join_files(path1, path2, threshold=None, k_closest=None):
 
     filter_names = ['__line_number', '__coords']
     for c_pair in fn(*args):
-        out_row = {}
+        out_row = collections.OrderedDict()
 
         for k,v in c_pair[0].data.iteritems():
             if k in filter_names:
                 continue
-            out_row[k] = v
+            out_row['1_' + k] = v
 
         for k,v in c_pair[1].data.iteritems():
             if k in filter_names:
                 continue
-            if k in out_row:
-                out_row['1_' + k] = out_row[k]
-                del out_row[k]
-                out_row['2_' + k] = v
+            out_row['2_' + k] = v
 
         yield out_row

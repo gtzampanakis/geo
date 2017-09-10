@@ -1,3 +1,4 @@
+import collections
 import csv
 
 import geotypes as gt
@@ -18,22 +19,32 @@ def get_csv_reader(path):
             if required_name not in header_names:
                 raise error.WrongHeaderException(required_name)
 
-    with open(path, 'rb') as infile:
-        reader = csv.DictReader(infile)
         for rowi, row in enumerate(reader, 1):
-            row['__line_number'] = rowi
+            data = collections.OrderedDict()
+            for i in xrange(len(header_names)):
+                if i < len(row):
+                    data[header_names[i]] = row[i]
+
+            data['__line_number'] = rowi
             try:
-                p = float(row['Latitude'])
+                p = float(data['Latitude'])
             except ValueError as e:
                 raise error.CoordinateNotANumber(
-                    rowi, 'Latitude', row['Latitude'])
+                    rowi, 'Latitude', data['Latitude'])
             try:
-                l = float(row['Longitude'])
+                l = float(data['Longitude'])
             except ValueError as e:
                 raise error.CoordinateNotANumber(
-                    rowi, 'Longitude', row['Longitude'])
-            row['__coords'] = gt.Coords(
-                float(row['Latitude']),
-                float(row['Longitude'])
-            )
-            yield row
+                    rowi, 'Longitude', data['Longitude'])
+            yield data
+
+def get_csv_writer_to_fobj(fobj, dicts):
+    for dicti, d in enumerate(dicts):
+        if dicti == 0:
+            writer = csv.DictWriter(fobj, fieldnames = d.keys())
+            writer.writeheader()
+        writer.writerow(d)
+
+def get_csv_writer(path, dicts):
+    with open(path, 'wb') as outfile:
+        return get_csv_writer_to_fobj(outfile)
