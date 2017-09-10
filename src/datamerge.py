@@ -1,7 +1,7 @@
 import heapq
 
 import geotypes as gt
-import fileread as fr
+import fileio as fio
 import geomath as gm
 
 def join_on_distance_threshold(
@@ -51,7 +51,7 @@ def join_on_k_closest(
             yield (c1, item[1])
 
 def path_to_coords_iterator(path):
-    for row in fr.get_csv_reader(path):
+    for row in fio.get_csv_reader(path):
         coords = row['__coords']
         coords.data = row
         yield coords
