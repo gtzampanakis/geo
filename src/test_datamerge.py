@@ -1,8 +1,13 @@
+import glob
+import os
 import unittest
 
 import geomath as gm
 import geotypes as gt
 import datamerge as dm
+
+BASE_DIR = os.path.dirname(__name__)
+TEST_DATA_DIR = os.path.join(BASE_DIR, 'test_data')
 
 class DataMergeTestCase(unittest.TestCase):
     
@@ -97,3 +102,32 @@ class DataMergeTestCase(unittest.TestCase):
                 (a[1], b[3]),
             ]
         )
+
+    def test_path_to_coords_iterator(self):
+        paths = glob.glob(os.path.join(TEST_DATA_DIR, 'success*.csv'))
+        for path in paths:
+            for c in dm.path_to_coords_iterator(path):
+                pass
+
+    def test_join_files_by_threshold(self):
+        rows = list(
+            dm.join_files(
+                os.path.join(TEST_DATA_DIR, 'success1.csv'),
+                os.path.join(TEST_DATA_DIR, 'success1.csv'),
+                threshold = 0
+            )
+        )
+        for row in rows:
+            self.assertEqual(row['1_Latitude'], row['2_Latitude'])
+            self.assertEqual(row['1_Longitude'], row['2_Longitude'])
+
+    def test_join_files_by_k_closest(self):
+        path = os.path.join(TEST_DATA_DIR, 'success1.csv')
+        rows = list(dm.path_to_coords_iterator(path))
+        for k_closest in xrange(1, len(rows) + 1):
+            joint_rows = list(dm.join_files(path, path, k_closest = k_closest))
+            if k_closest == 1:
+                for rowi, row in enumerate(joint_rows, 1):
+                    self.assertEqual(row['1_Latitude'], row['2_Latitude'])
+                    self.assertEqual(row['1_Longitude'], row['2_Longitude'])
+            self.assertEqual(len(joint_rows), len(rows) * k_closest)

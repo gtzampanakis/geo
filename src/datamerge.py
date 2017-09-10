@@ -1,5 +1,7 @@
 import heapq
 
+import geotypes as gt
+import fileread as fr
 import geomath as gm
 
 def join_on_distance_threshold(
@@ -48,10 +50,43 @@ def join_on_k_closest(
         for item in items:
             yield (c1, item[1])
 
-def join_dict_files(path1, path2, threshold=None, k_closest=None):
+def path_to_coords_iterator(path):
+    for row in fr.get_csv_reader(path):
+        coords = row['__coords']
+        coords.data = row
+        yield coords
+
+def join_files(path1, path2, threshold=None, k_closest=None):
     assert threshold is None or k_closest is None
     assert threshold is not None or k_closest is not None
 
-    if threshold is not None:
-        pass
+    args = [
+        lambda: path_to_coords_iterator(path1),
+        lambda: path_to_coords_iterator(path2),
+    ]
 
+    if threshold is not None:
+        fn = join_on_distance_threshold
+        args.append(threshold)
+    elif k_closest is not None:
+        fn = join_on_k_closest
+        args.append(k_closest)
+
+    filter_names = ['__line_number', '__coords']
+    for c_pair in fn(*args):
+        out_row = {}
+
+        for k,v in c_pair[0].data.iteritems():
+            if k in filter_names:
+                continue
+            out_row[k] = v
+
+        for k,v in c_pair[1].data.iteritems():
+            if k in filter_names:
+                continue
+            if k in out_row:
+                out_row['1_' + k] = out_row[k]
+                del out_row[k]
+                out_row['2_' + k] = v
+
+        yield out_row
