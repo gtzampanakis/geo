@@ -21,7 +21,6 @@ def deg_to_rad(d):
 def gc_dist_rad(p1, l1, p2, l2, r=None):
     if r is None:
         r = MID_R
-    dp = abs(p1 - p2)
     dl = abs(l1 - l2)
 
     cosp1 = cos(p1)

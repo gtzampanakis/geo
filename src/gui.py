@@ -1,3 +1,4 @@
+import cProfile
 import os
 import Queue
 import time
@@ -133,6 +134,9 @@ def work_thread_fn():
                     *message['args'],
                     **message['kwargs']
                 )
+                # profiler = cProfile.Profile()
+                # profiler.runcall(fio.get_csv_writer, message['output_path'], iterator)
+                # profiler.dump_stats('prof.txt')
                 result = fio.get_csv_writer(message['output_path'], iterator)
             except Exception as e:
                 result_queue.put({
@@ -226,8 +230,7 @@ def on_merge_click():
             elif state['merge_mode_var'].get() == MERGE_MODE_CLOSEST:
                 args = []
                 kwargs = {
-                    'threshold':
-                        gm.ft_to_m(int(state['k_closest_var'].get()))
+                    'k_closest': int(state['k_closest_var'].get())
                 }
             kwargs['result_queue'] = result_queue
             message = {
