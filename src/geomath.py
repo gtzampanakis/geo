@@ -2,8 +2,6 @@ from math import *
 
 # Using meters for all distances.
 
-MID_R = 6371 * 1000.
-
 FEET_PER_METER = 3.28084
 
 def m_to_ft(m):
@@ -18,9 +16,7 @@ def rad_to_deg(r):
 def deg_to_rad(d):
     return d/180. * pi
 
-def gc_dist_rad(p1, l1, p2, l2, r=None):
-    if r is None:
-        r = MID_R
+def gc_dist_rad(p1, l1, p2, l2):
     dl = abs(l1 - l2)
 
     cosp1 = cos(p1)
@@ -35,16 +31,26 @@ def gc_dist_rad(p1, l1, p2, l2, r=None):
         + (cosp1 * sinp2 - sinp1 * cosp2 * cosdl)**2
     )
     denominator = sinp1 * sinp2 + cosp1 * cosp2 * cosdl
-    return r * atan2(nominator**.5, denominator)
+    return atan2(nominator**.5, denominator)
 
-def gc_dist_deg(p1, l1, p2, l2, r=None):
+def gc_dist_deg(p1, l1, p2, l2):
     return gc_dist_rad(
        deg_to_rad(p1),
        deg_to_rad(l1),
        deg_to_rad(p2),
-       deg_to_rad(l2),
-       r
+       deg_to_rad(l2)
     )
 
-def gc_dist_coords(c1, c2, r=None):
+def gc_dist_coords(c1, c2):
     return gc_dist_rad(c1.p, c1.l, c2.p, c2.l)
+
+def coords_to_n_vector(coords):
+    cosp = cos(coords.p)
+    cosl = cos(coords.l)
+    sinp = sin(coords.p)
+    sinl = sin(coords.l)
+    return [
+        cosl * cosl,
+        cosl * sinl,
+        sinl
+    ]

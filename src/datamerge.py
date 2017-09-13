@@ -1,3 +1,4 @@
+import bisect
 import collections
 import heapq
 
@@ -5,17 +6,34 @@ import geotypes as gt
 import fileio as fio
 import geomath as gm
 
+MID_R = 6371 * 1000.
+
+def build_index(coords_list):
+    x_index = []
+    y_index = []
+    z_index = []
+    for c in coords_list:
+        x,y,z = gm.coords_to_n_vector(c)
+        x_index.append((x, c))
+        y_index.append((y, c))
+        z_index.append((z, c))
+    x_index.sort()
+    y_index.sort()
+    z_index.sort()
+    return x_index, y_index, z_index
+
 def join_on_distance_threshold(
     coords_1_iterator,
     coords_2_iterator,
-    threshold
+    threshold # in meters
 ):
     """
     Performs an 'INNER JOIN ON (DISTANCE(A,B) <= threshold)'
     """
-    assert threshold >= 0
+    threshold /= MID_R # normalized
     coords_1_list = list(coords_1_iterator)
     coords_2_list = list(coords_2_iterator)
+    coords_2_indexes = build_index(coords_2_list)
     for c1 in coords_1_list:
         for c2 in coords_2_list:
             if gm.gc_dist_coords(c1, c2) <= threshold:
@@ -54,6 +72,7 @@ def join_on_k_closest(
             yield (c1, item[1])
 
 def path_to_coords_iterator(path, result_queue=None):
+    rowi = None
     for rowi, row in enumerate(fio.get_csv_reader(path), 1):
         coords = gt.Coords(
             float(row['Latitude']),
@@ -61,8 +80,10 @@ def path_to_coords_iterator(path, result_queue=None):
             data=row
         )
         yield coords
-        if result_queue:
+        if result_queue and rowi % 100 == 0:
             result_queue.put({'type': 'PROGRESS', 'payload': rowi})
+    if result_queue and rowi is not None:
+        result_queue.put({'type': 'PROGRESS', 'payload': rowi})
 
 def join_files(path1, path2, threshold=None, k_closest=None, result_queue=None):
     assert threshold is None or k_closest is None

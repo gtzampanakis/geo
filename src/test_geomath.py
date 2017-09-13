@@ -27,7 +27,7 @@ class MathTestCase(unittest.TestCase):
         for di in xrange(-360, 360, 5):
             self.assertLess(gm.gc_dist_deg(di, di, di, di), MODICUM)
             self.assertLess(
-                abs(gm.gc_dist_deg(di, di, -di, di+180) - gm.MID_R*pi),
+                abs(gm.gc_dist_deg(di, di, -di, di+180) - pi),
                 MODICUM
             )
             self.assertLess(

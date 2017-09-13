@@ -14,16 +14,19 @@ import fileio as fio
 import geomath as gm
 import datamerge as dm
 
-# TODO: Set icon.
+BASE_DIR = os.path.dirname(__file__)
+
 # TODO: Handle all exceptions.
 # TODO: Make it so that buttons can be pressed with Enter key.
 # TODO: Check if empty files work
 # TODO: Fix appearance using multiple frames
 # TODO: Cancel button
 # TODO: Disable all buttons while process is running
+# TODO: make join functions start with smaller of the two lists
+# TODO: report progress while writing files
 
 root = Tk()
-root.title("Geography")
+root.title('GeoTools')
 
 MERGE_MODE_DISTANCE = 'DISTANCE'
 MERGE_MODE_CLOSEST = 'CLOSEST'
@@ -141,7 +144,8 @@ def work_thread_fn():
             except Exception as e:
                 result_queue.put({
                     'type': FN_EXCEPTION,
-                    'exception': e
+                    'exception': e,
+                    'exc_info': sys.exc_info(),
                 })
             else:
                 result_queue.put({
@@ -352,17 +356,21 @@ for child in F.winfo_children(): child.grid_configure(padx=5, pady=5)
 def check_result_queue():
     try:
         result_dict = result_queue.get(block=False)
-        info_text_var.set('Done! ' + info_text_var.get())
         if result_dict['type'] == FN_RESULT:
             merge_button['state'] = NORMAL
             return_value = result_dict['return_value']
+            info_text_var.set(info_text_var.get() + '\n' + 'Done.')
         elif result_dict['type'] == FN_EXCEPTION:
             merge_button['state'] = NORMAL
             exception = result_dict['exception']
             tkMessageBox.showerror(
                 'Error',
-                'Unexpected error: %s' % unicode(exception)
+                'Unexpected error: %s\n%s' % (
+                    exception,
+                    ''.join(traceback.format_tb( result_dict['exc_info'][2]))
+                )
             )
+            info_text_var.set(info_text_var.get() + '\n' + 'Error.')
         elif result_dict['type'] == PROGRESS:
             show_progress(result_dict['payload'])
 
@@ -372,6 +380,7 @@ def check_result_queue():
 
 root.after(100, check_result_queue)
 
+root.wm_iconbitmap(os.path.join(BASE_DIR, 'favicon.ico'))
 root.mainloop()
 
 work_load_queue.put({'type': EXIT})

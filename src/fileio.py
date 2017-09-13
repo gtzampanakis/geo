@@ -39,11 +39,14 @@ def get_csv_reader(path):
             yield data
 
 def get_csv_writer_to_fobj(fobj, dicts):
+    writer = None
     for dicti, d in enumerate(dicts):
         if dicti == 0:
             writer = csv.DictWriter(fobj, fieldnames = d.keys())
             writer.writeheader()
-        writer.writerow(d)
+            break
+    if writer is not None:
+        writer.writerows(dicts)
 
 def get_csv_writer(path, dicts):
     with open(path, 'wb') as outfile:
