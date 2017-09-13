@@ -1,4 +1,6 @@
 import os
+import Queue
+import time
 import threading
 import traceback
 
@@ -7,8 +9,17 @@ from tkFileDialog import askopenfilename, asksaveasfilename
 import tkMessageBox
 import ttk
 
+import fileio as fio
 import geomath as gm
 import datamerge as dm
+
+# TODO: Set icon.
+# TODO: Handle all exceptions.
+# TODO: Make it so that buttons can be pressed with Enter key.
+# TODO: Check if empty files work
+# TODO: Fix appearance using multiple frames
+# TODO: Cancel button
+# TODO: Disable all buttons while process is running
 
 root = Tk()
 root.title("Geography")
@@ -18,10 +29,18 @@ MERGE_MODE_CLOSEST = 'CLOSEST'
 
 ERROR_EMPTY_PATH = 'ERROR_EMPTY_PATH'
 DISTANCE_EMPTY = 'DISTANCE_EMPTY'
+K_CLOSEST_EMPTY = 'K_CLOSEST_EMPTY'
+
+FN_CALL = 'FN_CALL'
+FN_RESULT = 'FN_RESULT'
+FN_EXCEPTION = 'FN_EXCEPTION'
+EXIT = 'EXIT'
+PROGRESS = 'PROGRESS'
 
 ERROR_TO_MESSAGE = dict(
     ERROR_EMPTY_PATH = 'Please specify a path for File %s.',
     DISTANCE_EMPTY = 'Please specify a positive value for distance.',
+    K_CLOSEST_EMPTY = 'Please specify a positive value for number of points.',
 )
 
 state = dict(
@@ -40,6 +59,7 @@ path1_var = StringVar()
 path2_var = StringVar()
 
 error_text_var = StringVar()
+info_text_var = StringVar()
 
 STYLE = ttk.Style()
 
@@ -47,6 +67,9 @@ STYLE.configure('error_text.TLabel', foreground='red')
 
 def errmsg(code, *args):
     return ERROR_TO_MESSAGE[code] % args
+
+def show_progress(rowi):
+    info_text_var.set('Processing... Lines processed from File 1: %s' % rowi)
 
 def set_state(updates):
     state.update(updates)
@@ -65,6 +88,8 @@ def set_state(updates):
     STYLE.configure('path2.TButton', foreground='black')
     STYLE.configure('path1.TLabel', foreground='black')
     STYLE.configure('path2.TLabel', foreground='black')
+    STYLE.configure('distance.TRadiobutton', foreground='black')
+    STYLE.configure('k_closest.TRadiobutton', foreground='black')
 
     error_texts = []
 
@@ -76,11 +101,17 @@ def set_state(updates):
     path2_error = state.get('path2_error')
     if path2_error:
         STYLE.configure('path2.TButton', foreground='red')
-        error_texts.append(errmsg(path1_error, 2))
+        error_texts.append(errmsg(path2_error, 2))
     
     distance_error = state.get('distance_error')
     if distance_error:
+        STYLE.configure('distance.TRadiobutton', foreground='red')
         error_texts.append(errmsg(distance_error))
+
+    k_closest_error = state.get('k_closest_error')
+    if k_closest_error:
+        STYLE.configure('k_closest.TRadiobutton', foreground='red')
+        error_texts.append(errmsg(k_closest_error))
 
     error_text_var.set('\n'.join(error_texts))
 
@@ -89,14 +120,36 @@ F.grid(column=0, row=0, sticky=(N, W, E, S))
 F.columnconfigure(0, weight=1)
 F.rowconfigure(0, weight=1)
 
-def work_thread_fn(fn, *args, **kwargs):
-    merge_button['state'] = DISABLED
-    try:
-        fn(*args, **kwargs)
-        1/0
-    except Exception as e:
-        tkMessageBox.showerror('Error', unicode(e))
-    merge_button['state'] = NORMAL
+work_load_queue = Queue.Queue()
+result_queue = Queue.Queue()
+
+def work_thread_fn():
+    while True:
+        message = work_load_queue.get()
+        print 'received_message', message
+        if message['type'] == FN_CALL:
+            try:
+                iterator = message['fn'](
+                    *message['args'],
+                    **message['kwargs']
+                )
+                result = fio.get_csv_writer(message['output_path'], iterator)
+            except Exception as e:
+                result_queue.put({
+                    'type': FN_EXCEPTION,
+                    'exception': e
+                })
+            else:
+                result_queue.put({
+                    'type': FN_RESULT,
+                    'return_value': result
+                })
+        elif message['type'] == EXIT:
+            return
+
+work_thread = threading.Thread(target=work_thread_fn)
+work_thread.daemon = True
+work_thread.start()
 
 def on_path_selection_1():
     path = askopenfilename()
@@ -115,51 +168,97 @@ def on_path_selection_2():
         ))
 
 def on_merge_mode_change():
-    set_state({})
+    set_state({
+        'distance_error': None,
+        'k_closest_error': None,
+    })
 
 def on_merge_click():
-    path = asksaveasfilename(
-        defaultextension='.csv',
-        filetypes=[('CSV', '*.csv')]
-    )
-    if path:
+    proceed = True
 
-        proceed = True
+    state_updates = {}
+    if not state['path1']:
+        state_updates.update({ 'path1_error': ERROR_EMPTY_PATH })
+        proceed = False
+    else:
+        state_updates.update({ 'path1_error': None })
+    if not state['path2']:
+        state_updates.update({ 'path2_error': ERROR_EMPTY_PATH })
+        proceed = False
+    else:
+        state_updates.update({ 'path2_error': None })
 
-        if not state['path1']:
-            set_state({ 'path1_error': ERROR_EMPTY_PATH })
+    state_updates.update({
+        'distance_error': None,
+        'k_closest_error': None,
+    })
+
+    if state['merge_mode_var'].get() == MERGE_MODE_DISTANCE:
+        ft = state['distance_threshold_var'].get()
+        if not ft or int(ft) <= 0:
+            state_updates.update({ 'distance_error': DISTANCE_EMPTY })
             proceed = False
         else:
-            set_state({ 'path1_error': None })
-        if not state['path2']:
-            set_state({ 'path2_error': ERROR_EMPTY_PATH })
+            state_updates.update({ 'distance_error': None })
+
+    elif state['merge_mode_var'].get() == MERGE_MODE_CLOSEST:
+        ft = state['k_closest_var'].get()
+        if not ft or int(ft) <= 0:
+            state_updates.update({ 'k_closest_error': K_CLOSEST_EMPTY })
             proceed = False
         else:
-            set_state({ 'path2_error': None })
+            state_updates.update({ 'k_closest_error': None })
 
-        if state['merge_mode_var'].get() == MERGE_MODE_DISTANCE:
-            ft = state['distance_threshold_var'].get()
-            if not ft or float(ft) <= 0:
-                set_state({ 'distance_error': DISTANCE_EMPTY })
-                proceed = False
-            else:
-                set_state({ 'distance_error': None })
+    set_state(state_updates)
 
-            if proceed:
-                work_thread = threading.Thread(
-                    target = work_thread_fn,
-                    args = [
-                        dm.join_on_distance_threshold,
-                        lambda: dm.path_to_coords_iterator(state['path1']),
-                        lambda: dm.path_to_coords_iterator(state['path2']),
-                        gm.ft_to_m(float(state['distance_threshold_var'].get()))
-                    ]
-                )
-                work_thread.start()
+    if proceed:
+        path = asksaveasfilename(
+            defaultextension='.csv',
+            filetypes=[('CSV', '*.csv')]
+        )
+        if path:
+            if state['merge_mode_var'].get() == MERGE_MODE_DISTANCE:
+                args = []
+                kwargs = {
+                    'threshold':
+                        gm.ft_to_m(int(state['distance_threshold_var'].get()))
+                }
+            elif state['merge_mode_var'].get() == MERGE_MODE_CLOSEST:
+                args = []
+                kwargs = {
+                    'threshold':
+                        gm.ft_to_m(int(state['k_closest_var'].get()))
+                }
+            # args = [
+            #     lambda: dm.path_to_coords_iterator(
+            #         state['path1'],
+            #         result_queue=result_queue
+            #     ),
+            #     lambda: dm.path_to_coords_iterator(state['path2']),
+            #     gm.ft_to_m(int(state[var].get()))
+            # ]
+            # print 'passing args', args
+            kwargs['result_queue'] = result_queue
+            message = {
+                'type': FN_CALL,
+                'fn': dm.join_files,
+                'args': (state['path1'], state['path2']),
+                'kwargs': kwargs,
+                'output_path': path
+            }
+            info_text_var.set('')
+            merge_button['state'] = DISABLED
+            work_load_queue.put(message)
+            info_text_var.set('Processing...')
 
-def validate_integer_key_press(action_code, new_char):
+def validate_integer_key_press(action_code, new_char, full_text):
     if action_code == '1':
         if new_char in [str(i) for i in xrange(10)]:
+            if full_text and int(full_text) > 0:
+                set_state({
+                    'distance_error': None,
+                    'k_closest_error': None,
+                })
             return True
     elif action_code == '0':
         return True
@@ -191,7 +290,8 @@ ttk.Label(
 ttk.Radiobutton(
     F, text='Distance',
     value=MERGE_MODE_DISTANCE, variable=state['merge_mode_var'],
-    command=on_merge_mode_change
+    command=on_merge_mode_change,
+    style='distance.TRadiobutton'
 ).grid(column=0, row=2*pathi+3, sticky=(W))
 
 distance_threshold_entry = ttk.Entry(
@@ -202,7 +302,7 @@ validate_integer_key_press_cmd = distance_threshold_entry.register(
                                                     validate_integer_key_press)
 distance_threshold_entry['validatecommand'] = (
                                           validate_integer_key_press_cmd,
-                                          '%d', '%S')
+                                          '%d', '%S', '%P')
 distance_threshold_entry.grid(column=1, row=2*pathi+3, sticky=(W))
 
 ttk.Label(
@@ -212,7 +312,8 @@ ttk.Label(
 ttk.Radiobutton(
     F, text='Number of points',
     value=MERGE_MODE_CLOSEST, variable=state['merge_mode_var'],
-    command=on_merge_mode_change
+    command=on_merge_mode_change,
+    style='k_closest.TRadiobutton'
 ).grid(column=0, row=2*pathi+4, sticky=(W))
 
 k_closest_entry = ttk.Entry(
@@ -225,7 +326,7 @@ set_state({}) # To cause the DISABLED state to be set on the correct entry.
 validate_integer_key_press_cmd = k_closest_entry.register(
                                                     validate_integer_key_press)
 k_closest_entry['validatecommand'] = (validate_integer_key_press_cmd,
-                                      '%d', '%S')
+                                      '%d', '%S', '%P')
 k_closest_entry.grid(column=1, row=2*pathi+4, sticky=(W))
 
 ttk.Label(
@@ -237,11 +338,47 @@ merge_button = ttk.Button(
 )
 merge_button.grid(column=0, columnspan=3, sticky=(W, E))
 
-ttk.Label(
+Label(
+    F, textvariable=info_text_var,
+    anchor=NW,
+    justify=LEFT
+).grid(column=0, columnspan=3, sticky=(W, E))
+
+Label(
     F, textvariable=error_text_var,
-    style='error_text.TLabel'
+    height=4,
+    foreground='red',
+    anchor=NW,
+    justify=LEFT,
+    #style='error_text.TLabel',
 ).grid(column=0, columnspan=3, sticky=(W, E))
 
 for child in F.winfo_children(): child.grid_configure(padx=5, pady=5)
 
+def check_result_queue():
+    try:
+        result_dict = result_queue.get(block=False)
+        info_text_var.set('Done! ' + info_text_var.get())
+        if result_dict['type'] == FN_RESULT:
+            merge_button['state'] = NORMAL
+            return_value = result_dict['return_value']
+        elif result_dict['type'] == FN_EXCEPTION:
+            merge_button['state'] = NORMAL
+            exception = result_dict['exception']
+            tkMessageBox.showerror(
+                'Error',
+                'Unexpected error: %s' % unicode(exception)
+            )
+        elif result_dict['type'] == PROGRESS:
+            show_progress(result_dict['payload'])
+
+    except Queue.Empty as e:
+        pass
+    root.after(10, check_result_queue)
+
+root.after(100, check_result_queue)
+
 root.mainloop()
+
+work_load_queue.put({'type': EXIT})
+
