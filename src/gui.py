@@ -16,7 +16,7 @@ import datamerge as dm
 
 BASE_DIR = os.path.dirname(__file__)
 
-WIDTH = 35
+WIDTH = 40
 
 root = Tk()
 root.title('GeoTools')
@@ -117,14 +117,17 @@ F.grid(column=0, row=0, sticky=(N, W, E, S))
 F.columnconfigure(0, weight=1)
 F.rowconfigure(0, weight=1)
 
-file_selection_frame = ttk.Frame(F)
-file_selection_frame.grid(column=0, row=0)
+file_selection_frame = ttk.Frame(F, width=WIDTH)
+file_selection_frame.grid(column=0, row=0, sticky=(N, W, E, S))
 
-merge_by_selection_frame = ttk.Frame(F)
-merge_by_selection_frame.grid(column=0, row=1)
+merge_by_selection_frame = ttk.Frame(F, width=WIDTH)
+merge_by_selection_frame.grid(column=0, row=1, sticky=(N, W, E, S))
 
-rest_frame = ttk.Frame(F)
-rest_frame.grid(column=0, row=2)
+merge_button_frame = ttk.Frame(F, width=WIDTH)
+merge_button_frame.grid(column=0, row=2, sticky=(N, W, E, S))
+
+rest_frame = ttk.Frame(F, width=WIDTH)
+rest_frame.grid(column=0, row=3, sticky=(N, W, E, S))
 
 work_load_queue = Queue.Queue()
 result_queue = Queue.Queue()
@@ -132,7 +135,6 @@ result_queue = Queue.Queue()
 def work_thread_fn():
     while True:
         message = work_load_queue.get()
-        print 'received_message', message
         if message['type'] == FN_CALL:
             try:
                 iterator = message['fn'](
@@ -334,9 +336,10 @@ ttk.Label(
 ).grid(column=2, row=2, sticky=(W))
 
 merge_button = ttk.Button(
-    merge_by_selection_frame, text='Save merged file', command=on_merge_click
+    merge_button_frame, text='Save merged file', command=on_merge_click,
+    width=WIDTH
 )
-merge_button.grid(column=0, columnspan=3, sticky=(W, E))
+merge_button.grid(column=3, row=0, sticky=(E))
 
 Label(
     rest_frame, textvariable=info_text_var,
@@ -354,6 +357,7 @@ Label(
 ).grid(column=0, row=2, sticky=(W, E))
 
 for child in F.winfo_children(): child.grid_configure(padx=5, pady=5)
+for child in merge_by_selection_frame.winfo_children(): child.grid_configure(padx=2, pady=2)
 
 def check_result_queue():
     try:
