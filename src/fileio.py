@@ -47,4 +47,4 @@ def get_csv_writer_to_fobj(fobj, dicts):
 
 def get_csv_writer(path, dicts):
     with open(path, 'wb') as outfile:
-        return get_csv_writer_to_fobj(outfile)
+        return get_csv_writer_to_fobj(outfile, dicts)

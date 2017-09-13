@@ -51,21 +51,23 @@ def join_on_k_closest(
         for item in items:
             yield (c1, item[1])
 
-def path_to_coords_iterator(path):
-    for row in fio.get_csv_reader(path):
+def path_to_coords_iterator(path, result_queue=None):
+    for rowi, row in enumerate(fio.get_csv_reader(path), 1):
         coords = gt.Coords(
             float(row['Latitude']),
             float(row['Longitude']),
             data=row
         )
         yield coords
+        if result_queue:
+            result_queue.put({'type': 'PROGRESS', 'payload': rowi})
 
-def join_files(path1, path2, threshold=None, k_closest=None):
+def join_files(path1, path2, threshold=None, k_closest=None, result_queue=None):
     assert threshold is None or k_closest is None
     assert threshold is not None or k_closest is not None
 
     args = [
-        lambda: path_to_coords_iterator(path1),
+        lambda: path_to_coords_iterator(path1, result_queue),
         lambda: path_to_coords_iterator(path2),
     ]
 
