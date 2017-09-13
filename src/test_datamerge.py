@@ -16,8 +16,8 @@ class DataMergeTestCase(unittest.TestCase):
         b = [gt.Coords(0, 0)]
         self.assertEqual(
             list(dm.join_on_distance_threshold(
-                lambda: a,
-                lambda: b,
+                a,
+                b,
                 1
             )),
             [(a[0], b[0])]
@@ -28,8 +28,8 @@ class DataMergeTestCase(unittest.TestCase):
         b = [gt.Coords(45, 0)]
         self.assertEqual(
             list(dm.join_on_distance_threshold(
-                lambda: a,
-                lambda: b,
+                a,
+                b,
                 1
             )),
             []
@@ -40,8 +40,8 @@ class DataMergeTestCase(unittest.TestCase):
         b = [gt.Coords(45, 0)]
         self.assertEqual(
             list(dm.join_on_distance_threshold(
-                lambda: a,
-                lambda: b,
+                a,
+                b,
                 1
             )),
             []
@@ -52,8 +52,8 @@ class DataMergeTestCase(unittest.TestCase):
         b = [gt.Coords(0, 0), gt.Coords(0, 0)]
         self.assertEqual(
             list(dm.join_on_distance_threshold(
-                lambda: a,
-                lambda: b,
+                a,
+                b,
                 1
             )),
             [
@@ -69,8 +69,8 @@ class DataMergeTestCase(unittest.TestCase):
         b = [gt.Coords(0, 0), gt.Coords(45, 180)]
         self.assertEqual(
             list(dm.join_on_k_closest(
-                lambda: a,
-                lambda: b,
+                a,
+                b,
                 1
             )),
             [
@@ -91,8 +91,8 @@ class DataMergeTestCase(unittest.TestCase):
         ]
         self.assertEqual(
             list(dm.join_on_k_closest(
-                lambda: a,
-                lambda: b,
+                a,
+                b,
                 2
             )),
             [

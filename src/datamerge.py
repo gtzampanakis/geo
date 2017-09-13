@@ -6,37 +6,39 @@ import fileio as fio
 import geomath as gm
 
 def join_on_distance_threshold(
-    coords_1_iterator_factory,
-    coords_2_iterator_factory,
+    coords_1_iterator,
+    coords_2_iterator,
     threshold
 ):
     """
     Performs an 'INNER JOIN ON (DISTANCE(A,B) <= threshold)'
     """
     assert threshold >= 0
-    for c1 in coords_1_iterator_factory():
-        c2_iterator = coords_2_iterator_factory()
-        for c2 in c2_iterator:
+    coords_1_list = list(coords_1_iterator)
+    coords_2_list = list(coords_2_iterator)
+    for c1 in coords_1_list:
+        for c2 in coords_2_list:
             if gm.gc_dist_coords(c1, c2) <= threshold:
                 yield (c1, c2)
 
 def join_on_k_closest(
-    coords_1_iterator_factory,
-    coords_2_iterator_factory,
+    coords_1_iterator,
+    coords_2_iterator,
     k
 ):
     """
     Performs an 'INNER JOIN ON (A IN {k closest points to B})'
     """
     assert k >= 1
+    coords_1_list = list(coords_1_iterator)
+    coords_2_list = list(coords_2_iterator)
     # heapq.pop() returns the smallest item so we use the opposite of the
     # distance function
     def dfn(c1_, c2_): return -gm.gc_dist_coords(c1_, c2_)
-    for c1 in coords_1_iterator_factory():
-        c2_iterator = coords_2_iterator_factory()
+    for c1 in coords_1_list:
         items = []
         coords = []
-        for c2 in c2_iterator:
+        for c2 in coords_2_list:
             d = dfn(c1, c2)
             # Sorting by this item effectively means sorting by the first element
             # and as a bonus we keep a reference to the coords to which "d"
@@ -67,8 +69,8 @@ def join_files(path1, path2, threshold=None, k_closest=None, result_queue=None):
     assert threshold is not None or k_closest is not None
 
     args = [
-        lambda: path_to_coords_iterator(path1, result_queue),
-        lambda: path_to_coords_iterator(path2),
+        path_to_coords_iterator(path1, result_queue),
+        path_to_coords_iterator(path2),
     ]
 
     if threshold is not None:

@@ -229,15 +229,6 @@ def on_merge_click():
                     'threshold':
                         gm.ft_to_m(int(state['k_closest_var'].get()))
                 }
-            # args = [
-            #     lambda: dm.path_to_coords_iterator(
-            #         state['path1'],
-            #         result_queue=result_queue
-            #     ),
-            #     lambda: dm.path_to_coords_iterator(state['path2']),
-            #     gm.ft_to_m(int(state[var].get()))
-            # ]
-            # print 'passing args', args
             kwargs['result_queue'] = result_queue
             message = {
                 'type': FN_CALL,
