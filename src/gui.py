@@ -16,6 +16,8 @@ import datamerge as dm
 
 BASE_DIR = os.path.dirname(__file__)
 
+WIDTH = 35
+
 root = Tk()
 root.title('GeoTools')
 
@@ -114,6 +116,15 @@ F = ttk.Frame(root, padding="3 3 12 12")
 F.grid(column=0, row=0, sticky=(N, W, E, S))
 F.columnconfigure(0, weight=1)
 F.rowconfigure(0, weight=1)
+
+file_selection_frame = ttk.Frame(F)
+file_selection_frame.grid(column=0, row=0)
+
+merge_by_selection_frame = ttk.Frame(F)
+merge_by_selection_frame.grid(column=0, row=1)
+
+rest_frame = ttk.Frame(F)
+rest_frame.grid(column=0, row=2)
 
 work_load_queue = Queue.Queue()
 result_queue = Queue.Queue()
@@ -262,51 +273,51 @@ for pathi, select_command, path_var in zip(
     [path1_var, path2_var],
 ):
     path_buttons[pathi] = ttk.Button(
-        F, text='Open File %s' % (pathi+1),
+        file_selection_frame, text='Open File %s' % (pathi+1),
         command=select_command,
         style='path%s.TButton' % (pathi+1)
     )
-    path_buttons[pathi].grid(column=0, row=2*pathi, sticky=(W))
+    path_buttons[pathi].grid(column=0, row=pathi, sticky=(W))
     
     ttk.Label(
-        F, textvariable=path_var, width=50
-    ).grid(column=1, row=2*pathi, sticky=(W))
+        file_selection_frame, textvariable=path_var, width=WIDTH
+    ).grid(column=1, row=pathi, sticky=(W))
 
 ttk.Label(
-    F, text='Merge by:'
-).grid(column=0, row=2*pathi+2, sticky=(W))
+    merge_by_selection_frame, text='Merge by:'
+).grid(column=0, row=0, sticky=(W))
 
 ttk.Radiobutton(
-    F, text='Distance',
+    merge_by_selection_frame, text='Distance',
     value=MERGE_MODE_DISTANCE, variable=state['merge_mode_var'],
     command=on_merge_mode_change,
     style='distance.TRadiobutton'
-).grid(column=0, row=2*pathi+3, sticky=(W))
+).grid(column=0, row=1, sticky=(W))
 
 distance_threshold_entry = ttk.Entry(
-    F, width=10, textvariable=state['distance_threshold_var'],
-    validate='key'
+    merge_by_selection_frame, width=10,
+    textvariable=state['distance_threshold_var'], validate='key'
 )
 validate_integer_key_press_cmd = distance_threshold_entry.register(
                                                     validate_integer_key_press)
 distance_threshold_entry['validatecommand'] = (
                                           validate_integer_key_press_cmd,
                                           '%d', '%S', '%P')
-distance_threshold_entry.grid(column=1, row=2*pathi+3, sticky=(W))
+distance_threshold_entry.grid(column=1, row=1, sticky=(W))
 
 ttk.Label(
-    F, text='feet'
-).grid(column=2, row=2*pathi+3, sticky=(W))
+    merge_by_selection_frame, text='feet'
+).grid(column=2, row=1, sticky=(W))
 
 ttk.Radiobutton(
-    F, text='Number of points',
+    merge_by_selection_frame, text='Number of points',
     value=MERGE_MODE_CLOSEST, variable=state['merge_mode_var'],
     command=on_merge_mode_change,
     style='k_closest.TRadiobutton'
-).grid(column=0, row=2*pathi+4, sticky=(W))
+).grid(column=0, row=2, sticky=(W))
 
 k_closest_entry = ttk.Entry(
-    F, width=10, textvariable=state['k_closest_var'],
+    merge_by_selection_frame, width=10, textvariable=state['k_closest_var'],
     validate='key'
 )
 
@@ -316,31 +327,31 @@ validate_integer_key_press_cmd = k_closest_entry.register(
                                                     validate_integer_key_press)
 k_closest_entry['validatecommand'] = (validate_integer_key_press_cmd,
                                       '%d', '%S', '%P')
-k_closest_entry.grid(column=1, row=2*pathi+4, sticky=(W))
+k_closest_entry.grid(column=1, row=2, sticky=(W))
 
 ttk.Label(
-    F, text='points'
-).grid(column=2, row=2*pathi+4, sticky=(W))
+    merge_by_selection_frame, text='points'
+).grid(column=2, row=2, sticky=(W))
 
 merge_button = ttk.Button(
-    F, text='Save merged file', command=on_merge_click
+    merge_by_selection_frame, text='Save merged file', command=on_merge_click
 )
 merge_button.grid(column=0, columnspan=3, sticky=(W, E))
 
 Label(
-    F, textvariable=info_text_var,
+    rest_frame, textvariable=info_text_var,
     anchor=NW,
     justify=LEFT
-).grid(column=0, columnspan=3, sticky=(W, E))
+).grid(column=0, row=1, sticky=(W, E))
 
 Label(
-    F, textvariable=error_text_var,
+    rest_frame, textvariable=error_text_var,
     height=4,
     foreground='red',
     anchor=NW,
     justify=LEFT,
     #style='error_text.TLabel',
-).grid(column=0, columnspan=3, sticky=(W, E))
+).grid(column=0, row=2, sticky=(W, E))
 
 for child in F.winfo_children(): child.grid_configure(padx=5, pady=5)
 
