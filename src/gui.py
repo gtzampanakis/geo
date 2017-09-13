@@ -16,15 +16,6 @@ import datamerge as dm
 
 BASE_DIR = os.path.dirname(__file__)
 
-# TODO: Handle all exceptions.
-# TODO: Make it so that buttons can be pressed with Enter key.
-# TODO: Check if empty files work
-# TODO: Fix appearance using multiple frames
-# TODO: Cancel button
-# TODO: Disable all buttons while process is running
-# TODO: make join functions start with smaller of the two lists
-# TODO: report progress while writing files
-
 root = Tk()
 root.title('GeoTools')
 

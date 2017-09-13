@@ -44,9 +44,7 @@ def get_csv_writer_to_fobj(fobj, dicts):
         if dicti == 0:
             writer = csv.DictWriter(fobj, fieldnames = d.keys())
             writer.writeheader()
-            break
-    if writer is not None:
-        writer.writerows(dicts)
+        writer.writerow(d)
 
 def get_csv_writer(path, dicts):
     with open(path, 'wb') as outfile:

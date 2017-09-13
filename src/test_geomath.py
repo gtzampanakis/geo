@@ -5,7 +5,7 @@ import unittest
 import geomath as gm
 import geotypes as gt
 
-MODICUM = 1e-3
+MODICUM = 1e-14
 
 class MathTestCase(unittest.TestCase):
 
@@ -39,6 +39,11 @@ class MathTestCase(unittest.TestCase):
                 ),
                 MODICUM
             )
+            self.assertLess(abs(gm.gc_dist_deg(0, 0, 90, 0) - pi/2), MODICUM)
+            self.assertLess(abs(gm.gc_dist_deg(0, 50, 45, 50) - pi/4), MODICUM)
+            self.assertLess(abs(gm.gc_dist_deg(0, 50, 90, 50) - pi/2), MODICUM)
+            self.assertLess(abs(gm.gc_dist_deg(0, 50, 180, 50) - pi), MODICUM)
+            self.assertLess(abs(gm.gc_dist_deg(0, 50, 360, 50) - 0), MODICUM)
     
     def test_gc_dist_coords(self):
         random.seed('test_gc_dist_coords')

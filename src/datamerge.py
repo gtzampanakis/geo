@@ -25,7 +25,8 @@ def build_index(coords_list):
 def join_on_distance_threshold(
     coords_1_iterator,
     coords_2_iterator,
-    threshold # in meters
+    threshold, # in meters
+    result_queue=None
 ):
     """
     Performs an 'INNER JOIN ON (DISTANCE(A,B) <= threshold)'
@@ -33,16 +34,21 @@ def join_on_distance_threshold(
     threshold /= MID_R # normalized
     coords_1_list = list(coords_1_iterator)
     coords_2_list = list(coords_2_iterator)
-    coords_2_indexes = build_index(coords_2_list)
-    for c1 in coords_1_list:
+    c1i = None
+    for c1i, c1 in enumerate(coords_1_list, 1):
         for c2 in coords_2_list:
             if gm.gc_dist_coords(c1, c2) <= threshold:
                 yield (c1, c2)
+        if result_queue and c1i % 25 == 0:
+            result_queue.put({'type': 'PROGRESS', 'payload': '%s/%s' % (c1i, len(coords_1_list))})
+    if result_queue and c1i is not None:
+        result_queue.put({'type': 'PROGRESS', 'payload': '%s/%s' % (c1i, len(coords_1_list))})
 
 def join_on_k_closest(
     coords_1_iterator,
     coords_2_iterator,
-    k
+    k,
+    result_queue=None
 ):
     """
     Performs an 'INNER JOIN ON (A IN {k closest points to B})'
@@ -53,7 +59,8 @@ def join_on_k_closest(
     # heapq.pop() returns the smallest item so we use the opposite of the
     # distance function
     def dfn(c1_, c2_): return -gm.gc_dist_coords(c1_, c2_)
-    for c1 in coords_1_list:
+    c1i = None
+    for c1i, c1 in enumerate(coords_1_list, 1):
         items = []
         coords = []
         for c2 in coords_2_list:
@@ -70,8 +77,12 @@ def join_on_k_closest(
             assert len(items) <= k
         for item in items:
             yield (c1, item[1])
+        if result_queue and c1i % 25 == 0:
+            result_queue.put({'type': 'PROGRESS', 'payload': '%s/%s' % (c1i, len(coords_1_list))})
+    if result_queue and c1i is not None:
+        result_queue.put({'type': 'PROGRESS', 'payload': '%s/%s' % (c1i, len(coords_1_list))})
 
-def path_to_coords_iterator(path, result_queue=None):
+def path_to_coords_iterator(path):
     rowi = None
     for rowi, row in enumerate(fio.get_csv_reader(path), 1):
         coords = gt.Coords(
@@ -80,17 +91,13 @@ def path_to_coords_iterator(path, result_queue=None):
             data=row
         )
         yield coords
-        if result_queue and rowi % 100 == 0:
-            result_queue.put({'type': 'PROGRESS', 'payload': rowi})
-    if result_queue and rowi is not None:
-        result_queue.put({'type': 'PROGRESS', 'payload': rowi})
 
 def join_files(path1, path2, threshold=None, k_closest=None, result_queue=None):
     assert threshold is None or k_closest is None
     assert threshold is not None or k_closest is not None
 
     args = [
-        path_to_coords_iterator(path1, result_queue),
+        path_to_coords_iterator(path1),
         path_to_coords_iterator(path2),
     ]
 
@@ -100,6 +107,8 @@ def join_files(path1, path2, threshold=None, k_closest=None, result_queue=None):
     elif k_closest is not None:
         fn = join_on_k_closest
         args.append(k_closest)
+
+    args.append(result_queue)
 
     filter_names = ['__line_number', '__coords']
     for c_pair in fn(*args):
