@@ -1,5 +1,6 @@
 import collections
 import csv
+import os
 
 import geotypes as gt
 import error
@@ -8,16 +9,17 @@ def get_csv_reader(path):
 # Check the header. If it doesn't DictReader will not be able to return
 # meaningful data.
 
+    filename = os.path.basename(path)
     with open(path, 'rb') as infile:
         reader = csv.reader(infile)
         try:
             row = reader.next()
         except StopIteration as e:
-            raise error.MissingHeaderException
+            raise error.MissingHeaderException(filename)
         header_names = [col.strip() for col in row]
         for required_name in ['Latitude', 'Longitude']:
             if required_name not in header_names:
-                raise error.WrongHeaderException(required_name)
+                raise error.WrongHeaderException(filename, required_name)
 
         for rowi, row in enumerate(reader, 1):
             data = collections.OrderedDict()
@@ -30,12 +32,12 @@ def get_csv_reader(path):
                 p = float(data['Latitude'])
             except ValueError as e:
                 raise error.CoordinateNotANumber(
-                    rowi, 'Latitude', data['Latitude'])
+                    filename, rowi, 'Latitude', data['Latitude'])
             try:
                 l = float(data['Longitude'])
             except ValueError as e:
                 raise error.CoordinateNotANumber(
-                    rowi, 'Longitude', data['Longitude'])
+                    filename, rowi, 'Longitude', data['Longitude'])
             yield data
 
 def get_csv_writer_to_fobj(fobj, dicts):
