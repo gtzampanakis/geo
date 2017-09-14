@@ -16,15 +16,23 @@ def rad_to_deg(r):
 def deg_to_rad(d):
     return d/180. * pi
 
-def gc_dist_rad(p1, l1, p2, l2):
+def gc_dist_rad(
+    p1, l1, p2, l2,
+    sinp1 = None,
+    cosp1 = None,
+    sinp2 = None,
+    cosp2 = None,
+    sindl = None,
+    cosdl = None,
+):
     dl = abs(l1 - l2)
 
-    cosp1 = cos(p1)
-    cosp2 = cos(p2)
-    sindl = sin(dl)
-    cosdl = cos(dl)
-    sinp1 = sin(p1)
-    sinp2 = sin(p2)
+    if cosp1 is None: cosp1 = cos(p1)
+    if cosp2 is None: cosp2 = cos(p2)
+    if sindl is None: sindl = sin(dl)
+    if cosdl is None: cosdl = cos(dl)
+    if sinp1 is None: sinp1 = sin(p1)
+    if sinp2 is None: sinp2 = sin(p2)
 
     nominator = (
           (cosp2 * sindl)**2
