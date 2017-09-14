@@ -99,3 +99,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+src/TODO
+src/geotools.zip
