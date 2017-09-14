@@ -1,6 +1,7 @@
 import cProfile
 import os
 import Queue
+import sys
 import time
 import threading
 import traceback
@@ -388,7 +389,10 @@ def main():
 
     root.after(100, check_result_queue)
 
-    root.wm_iconbitmap(os.path.join(BASE_DIR, 'favicon.ico'))
+    for path in sys.path:
+        favicon_path = os.path.join(path, 'favicon.ico')
+        if os.path.exists(favicon_path):
+            root.wm_iconbitmap(favicon_path)
     root.mainloop()
 
     work_load_queue.put({'type': EXIT})
