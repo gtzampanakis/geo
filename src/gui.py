@@ -253,9 +253,9 @@ def on_merge_click():
             work_load_queue.put(message)
             info_text_var.set('Processing...')
 
-def validate_integer_key_press(action_code, new_char, full_text):
+def validate_integer_key_press(action_code, new_text, full_text):
     if action_code == '1':
-        if new_char in [str(i) for i in xrange(10)]:
+        if all(c in [str(i) for i in xrange(10)] for c in new_text):
             if full_text and int(full_text) > 0:
                 set_state({
                     'distance_error': None,
