@@ -57,11 +57,11 @@ class MathTestCase(unittest.TestCase):
                 gm.deg_to_rad(di) + random.random()*2*pi
             )
             self.assertEqual(
-                gm.gc_dist_coords(c1, c2),
+                gm.gc_dist_coords_rad(c1, c2),
                 gm.gc_dist_rad(c1.p, c1.l, c2.p, c2.l)
             )
             self.assertLess(
-                abs(gm.gc_dist_coords(c1, c2) - gm.gc_dist_coords(c2, c1)),
+                abs(gm.gc_dist_coords_rad(c1, c2) - gm.gc_dist_coords_rad(c2, c1)),
                 MODICUM
             )
 
@@ -81,6 +81,6 @@ class MathTestCase(unittest.TestCase):
             gt.Coords(0, pi/1),
         ]
         c1 = cs[0]
-        sor = sorted(cs, key = lambda c2: gm.gc_dist_coords(c1, c2))
+        sor = sorted(cs, key = lambda c2: gm.gc_dist_coords_rad(c1, c2))
         self.assertEqual(cs, sor)
 

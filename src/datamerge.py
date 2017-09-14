@@ -37,12 +37,14 @@ def join_on_distance_threshold(
     c1i = None
     for c1i, c1 in enumerate(coords_1_list, 1):
         for c2 in coords_2_list:
-            if gm.gc_dist_coords(c1, c2) <= threshold:
+            if gm.gc_dist_coords_deg(c1, c2) <= threshold:
                 yield (c1, c2)
         if result_queue and c1i % 25 == 0:
-            result_queue.put({'type': 'PROGRESS', 'payload': '%s/%s' % (c1i, len(coords_1_list))})
+            result_queue.put({'type': 'PROGRESS', 'payload': '%s/%s' %
+                                                    (c1i, len(coords_1_list))})
     if result_queue and c1i is not None:
-        result_queue.put({'type': 'PROGRESS', 'payload': '%s/%s' % (c1i, len(coords_1_list))})
+        result_queue.put({'type': 'PROGRESS', 'payload': '%s/%s' %
+                                                    (c1i, len(coords_1_list))})
 
 def join_on_k_closest(
     coords_1_iterator,
@@ -58,7 +60,7 @@ def join_on_k_closest(
     coords_2_list = list(coords_2_iterator)
     # heapq.pop() returns the smallest item so we use the opposite of the
     # distance function
-    def dfn(c1_, c2_): return -gm.gc_dist_coords(c1_, c2_)
+    def dfn(c1_, c2_): return -gm.gc_dist_coords_deg(c1_, c2_)
     c1i = None
     for c1i, c1 in enumerate(coords_1_list, 1):
         items = []

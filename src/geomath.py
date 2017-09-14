@@ -41,16 +41,8 @@ def gc_dist_deg(p1, l1, p2, l2):
        deg_to_rad(l2)
     )
 
-def gc_dist_coords(c1, c2):
+def gc_dist_coords_rad(c1, c2):
     return gc_dist_rad(c1.p, c1.l, c2.p, c2.l)
 
-def coords_to_n_vector(coords):
-    cosp = cos(coords.p)
-    cosl = cos(coords.l)
-    sinp = sin(coords.p)
-    sinl = sin(coords.l)
-    return [
-        cosl * cosl,
-        cosl * sinl,
-        sinl
-    ]
+def gc_dist_coords_deg(c1, c2):
+    return gc_dist_deg(c1.p, c1.l, c2.p, c2.l)
